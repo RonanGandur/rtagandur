@@ -263,6 +263,10 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
 
 <script>
 
+// =========================================================================
+// WEBSMAART - MOTOR DE ÁUDIO E DSP BLINDADO CONTRA ERROS DE CANVAS
+// =========================================================================
+
 let appState = {
     theme: 'dark', smoothing: '6', averaging: '2s',
     scaleMin: 20, scaleMax: 20000, noiseGain: -18
@@ -272,7 +276,7 @@ let savedTraces = [];
 const traceColors = ['#00FF88', '#00B7FF', '#FF00FF', '#FFD700', '#00FFFF', '#FF8C00'];
 
 let audioCtx;
-let inputStream, outputStream;
+let inputStream;
 let sourceNode;
 let analyzerRef, analyzerMic;
 let analyzerOutL, analyzerOutR;
@@ -280,6 +284,9 @@ let analyzerOutL, analyzerOutR;
 let noiseNode;
 let noiseGainNode;
 let isNoisePlaying = false;
+
+let maxSPLRecorded = 0;
+let splHistory = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     initUI();
@@ -297,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Inicia o loop de renderização dos gráficos e VUs
     requestAnimationFrame(renderLoop);
 });
 
@@ -337,7 +343,7 @@ function initUI() {
 }
 
 // ==========================================
-// AUDIO ENGINE & DUAL INPUT SELECT
+// AUDIO ENGINE & ROUTING
 // ==========================================
 
 async function requestAudioAccess() {
@@ -396,7 +402,6 @@ async function populateDeviceLists() {
         }
     });
 
-    // Seleciona o segundo input por padrão para o Mic, se houver mais de um
     if(micSelect.options.length > 1) {
         micSelect.selectedIndex = 1;
     }
@@ -415,7 +420,6 @@ function setupAudioRouting() {
     analyzerOutL.fftSize = 2048;
     analyzerOutR.fftSize = 2048;
 
-    // Splitter físico para alimentar as vias
     const splitter = audioCtx.createChannelSplitter(2);
     sourceNode.connect(splitter);
     
@@ -474,7 +478,7 @@ function togglePinkNoise() {
 }
 
 // ==========================================
-// RENDER LOOP (VUS + GRÁFICOS CANVAS)
+// RENDER LOOP & DSP (BLINDADO)
 // ==========================================
 
 function getRMSdB(analyzer) {
@@ -502,20 +506,46 @@ function renderLoop() {
     document.getElementById('vu-out-l').style.height = `${mapDB(dbOutL)}%`;
     document.getElementById('vu-out-r').style.height = `${mapDB(dbOutR)}%`;
 
-    // 2. Atualiza SPL no painel de Spectrograph
-    let currentSPL = Math.round(75 + (dbMic + 60) * 0.5); // Simulação de dBSPL baseada no Mic
-    if(!audioCtx || !document.getElementById('btn-audio-access').classList.contains('granted')) currentSPL = 0;
-    document.getElementById('spl-current').textContent = currentSPL > 0 ? `${currentSPL} dB` : '-- dB';
+    // 2. SPL Automático com Média Temporal
+    let rawSPL = Math.round(75 + (dbMic + 60) * 0.5);
+    if (!audioCtx || !document.getElementById('btn-audio-access').classList.contains('granted')) {
+        rawSPL = 0;
+    }
 
-    // 3. Desenha os Gráficos nos Canvas
-    drawRTA();
-    drawTransferFunction();
-    drawSpectrograph();
+    splHistory.push(rawSPL);
+    let maxFrames = 30;
+    if (appState.averaging === '1s') maxFrames = 60;
+    if (appState.averaging === '2s') maxFrames = 120;
+    if (appState.averaging === 'slow') maxFrames = 240;
+
+    if (splHistory.length > maxFrames) splHistory.shift();
+    const avgSPL = Math.round(splHistory.reduce((a, b) => a + b, 0) / splHistory.length);
+
+    document.getElementById('spl-current').textContent = avgSPL > 30 ? `${avgSPL} dB` : '-- dB';
+
+    if (avgSPL > maxSPLRecorded) {
+        maxSPLRecorded = avgSPL;
+        document.getElementById('spl-max').textContent = `${maxSPLRecorded} dB`;
+    }
+
+    // 3. Renderiza apenas a aba ativa (Evita erro de Canvas com largura 0)
+    const viewTf = document.getElementById('view-tf');
+    const viewRta = document.getElementById('view-rta');
+    const viewSpectro = document.getElementById('view-spectro');
+
+    if (viewTf.classList.contains('active-view')) {
+        drawTransferFunction();
+    } else if (viewRta.classList.contains('active-view')) {
+        drawRTA();
+    } else if (viewSpectro.classList.contains('active-view')) {
+        drawSpectrograph();
+    }
 }
 
 function drawRTA() {
     const canvas = document.getElementById('canvas-rta');
-    if(!canvas) return;
+    if(!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
+    
     const ctx = canvas.getContext('2d');
     if(canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
         canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
@@ -524,10 +554,9 @@ function drawRTA() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Desenha grid de fundo
     ctx.strokeStyle = '#1f242c';
     ctx.lineWidth = 1;
-    for(let x=0; x<canvas.width; x+=50) {
+    for(let x=0; x<canvas.width; x+=60) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
     for(let y=0; y<canvas.height; y+=40) {
@@ -538,22 +567,30 @@ function drawRTA() {
     const freqData = new Uint8Array(analyzerMic.frequencyBinCount);
     analyzerMic.getByteFrequencyData(freqData);
 
-    // Desenha barras do RTA (verde estilo Smaart)
-    const barWidth = canvas.width / 64;
+    const smoothingType = parseInt(appState.smoothing);
+    let step = 1;
+    if (smoothingType === 3) step = 3;
+    if (smoothingType === 6) step = 6;
+
+    const barWidth = canvas.width / (freqData.length / step);
     let x = 0;
-    for(let i=0; i<64; i++) {
-        const barHeight = (freqData[i] / 255) * canvas.height;
+    for(let i=0; i<freqData.length; i+=step) {
+        let sum = 0;
+        for(let j=0; j<step; j++) sum += freqData[i+j];
+        let val = sum / step;
+
+        const barHeight = (val / 255) * canvas.height;
         ctx.fillStyle = '#00FF88';
-        ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+        ctx.fillRect(x, canvas.height - barHeight, Math.max(1, barWidth - 1), barHeight);
         x += barWidth;
     }
 }
 
 function drawTransferFunction() {
-    // Magnitude, Fase e Impulse
     ['canvas-mag', 'canvas-phase', 'canvas-impulse'].forEach((id, index) => {
         const canvas = document.getElementById(id);
-        if(!canvas) return;
+        if(!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
+        
         const ctx = canvas.getContext('2d');
         if(canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
             canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
@@ -561,29 +598,49 @@ function drawTransferFunction() {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Linha central de referência
+        ctx.strokeStyle = '#1f242c';
+        ctx.lineWidth = 1;
+        for(let x=0; x<canvas.width; x+=60) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+
         ctx.strokeStyle = '#30363d';
         ctx.beginPath(); ctx.moveTo(0, canvas.height / 2); ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
 
-        // Simulação da curva ativa em verde/azul
-        ctx.strokeStyle = index === 0 ? '#00FF88' : (index === 1 ? '#00B7FF' : '#FFD700');
+        if(!analyzerMic || !analyzerRef) return;
+
+        const bufferLength = analyzerMic.frequencyBinCount;
+        const micData = new Uint8Array(bufferLength);
+        const refData = new Uint8Array(bufferLength);
+        analyzerMic.getByteFrequencyData(micData);
+        analyzerRef.getByteFrequencyData(refData);
+
         ctx.lineWidth = 2;
         ctx.beginPath();
-        for(let x=0; x<canvas.width; x+=5) {
-            let y = (canvas.height / 2) + Math.sin(x * 0.02 + Date.now() * 0.003) * (canvas.height * 0.3);
-            if(index === 2) y = canvas.height - Math.abs(Math.sin(x*0.05) * canvas.height * 0.8); // Impulse spike
-            if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+
+        if(index === 2) {
+            ctx.strokeStyle = '#FFD700';
+            let cx = canvas.width / 2;
+            ctx.moveTo(cx, canvas.height * 0.8);
+            ctx.lineTo(cx, canvas.height * 0.2);
+        } else {
+            ctx.strokeStyle = index === 0 ? '#00FF88' : '#00B7FF';
+            for(let x=0; x<canvas.width; x+=2) {
+                let idx = Math.floor((x / canvas.width) * (bufferLength / 4));
+                let ratio = (micData[idx] - refData[idx]) / 255;
+                let y = (canvas.height / 2) - (ratio * (canvas.height * 0.4));
+                if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
         }
         ctx.stroke();
 
-        // Desenha os Traces Salvos (Holds) se houverem
         savedTraces.forEach(tr => {
             if(!tr.visible) return;
             ctx.strokeStyle = tr.color;
             ctx.lineWidth = 1;
             ctx.beginPath();
-            for(let x=0; x<canvas.width; x+=10) {
-                let y = (canvas.height / 2) + Math.cos(x * 0.02 + tr.id) * (canvas.height * 0.25);
+            for(let x=0; x<canvas.width; x+=5) {
+                let y = canvas.height / 2;
                 if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.stroke();
@@ -593,17 +650,33 @@ function drawTransferFunction() {
 
 function drawSpectrograph() {
     const canvas = document.getElementById('canvas-spectro');
-    if(!canvas) return;
+    if(!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
+    
     const ctx = canvas.getContext('2d');
     if(canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
-        canvas.width = canvas.clientWidth; canvas.height.clientHeight;
+        canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
     }
-    // Efeito cascata simples (desloca a imagem para a esquerda)
+
     ctx.drawImage(canvas, -2, 0);
+
+    if(!analyzerMic) return;
+    const freqData = new Uint8Array(analyzerMic.frequencyBinCount);
+    analyzerMic.getByteFrequencyData(freqData);
+
+    let sliceX = canvas.width - 2;
+    let sliceHeight = canvas.height / 64;
+    for(let i=0; i<64; i++) {
+        let val = freqData[i * 4];
+        let red = val;
+        let green = 255 - val;
+        let blue = 100;
+        ctx.fillStyle = `rgb(${red},${green},${blue})`;
+        ctx.fillRect(sliceX, canvas.height - (i * sliceHeight), 2, sliceHeight);
+    }
 }
 
 // ==========================================
-// UTILIDADES E TRACE MANAGER
+// UTILIDADES E STATE
 // ==========================================
 
 function startClock() {
@@ -685,7 +758,7 @@ function renderTraces() {
         item.append(colorBox, nameInput, btnDel);
         list.appendChild(item);
     });
-} 
+}
     
 </script>
 </body>

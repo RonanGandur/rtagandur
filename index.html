@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSmaart - Analisador Acústico</title>
-
-<style>
-
-/* Variáveis de Tema */
-:root.dark {
+    <style>
+    
+    :root.dark {
     --bg-base: #0D1117; --bg-panel: #161b22; --border-color: #30363d;
     --text-main: #c9d1d9; --text-muted: #8b949e;
     --accent-blue: #00B7FF; --accent-green: #00FF88; --canvas-bg: #000000;
@@ -30,7 +28,6 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
-/* Topbar */
 .topbar { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color); }
 .tab-buttons { display: flex; gap: 4px; }
 .tab-btn { padding: 6px 16px; background: transparent; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 14px; }
@@ -41,10 +38,8 @@ body {
 .theme-btn:hover { color: var(--accent-blue); }
 .clock { color: var(--accent-green); font-family: monospace; font-size: 20px; font-weight: bold; }
 
-/* Layout Principal */
 .main-container { display: flex; flex: 1; overflow: hidden; }
 
-/* Left Panel (Data Bar) */
 .data-bar { width: 200px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 8px; gap: 8px; }
 .data-bar-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px; border-bottom: 1px solid var(--border-color); }
 .data-bar-header span { font-size: 12px; font-weight: bold; color: var(--accent-blue); }
@@ -58,16 +53,15 @@ body {
 .trace-del { background: transparent; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; font-weight: bold; }
 .trace-del:hover { color: #ff4444; }
 
-/* Center Views */
 .views-container { flex: 1; background-color: var(--bg-base); padding: 8px; display: flex; flex-direction: column; min-width: 0; }
 .view { display: none; flex: 1; flex-direction: column; gap: 8px; }
 .view.active-view { display: flex; }
 .chart-container { position: relative; border: 1px solid var(--border-color); background-color: var(--canvas-bg); border-radius: 4px; display: flex; flex-direction: column; }
 .chart-label { position: absolute; top: 4px; left: 8px; font-size: 10px; color: var(--text-muted); z-index: 10; }
 canvas { flex: 1; width: 100%; height: 100%; display: block; }
-.tf-layout .impulse-chart { flex: 0 0 20%; max-height: 100px; }
-.tf-layout .phase-chart { flex: 0 0 40%; max-height: 250px; }
-.tf-layout .mag-chart { flex: 0 0 40%; max-height: 250px; }
+.tf-layout .impulse-chart { flex: 0 0 20%; min-height: 80px; }
+.tf-layout .phase-chart { flex: 0 0 40%; min-height: 150px; }
+.tf-layout .mag-chart { flex: 0 0 40%; min-height: 150px; }
 .full-height-chart { flex: 1; }
 .spectro-layout .spectro-chart { flex: 1; }
 
@@ -78,26 +72,22 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
 .spl-current-val { color: var(--accent-green); }
 .spl-max-val { color: var(--accent-blue); }
 
-/* Right Panel (Settings) */
 .settings-panel { width: 280px; background-color: var(--bg-panel); border-left: 1px solid var(--border-color); padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .settings-group { border: 1px solid var(--border-color); padding: 8px; border-radius: 4px; }
 .settings-group h3 { font-size: 13px; color: var(--accent-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; }
 .settings-group label { display: block; font-size: 11px; color: var(--text-muted); margin: 8px 0 4px 0; }
 .settings-group select, .settings-group input { width: 100%; background-color: var(--bg-base); color: var(--text-main); border: 1px solid var(--border-color); padding: 4px; border-radius: 4px; outline: none; font-size: 12px; }
 
-/* Audio Access Btn */
 .access-btn { width: 100%; padding: 6px; background-color: var(--accent-blue); color: #000; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 8px; transition: 0.2s;}
 .access-btn:hover { filter: brightness(1.2); }
 .access-btn.granted { background-color: var(--accent-green); }
 
-/* VU Meters */
 .vu-meters-container { display: flex; justify-content: space-around; margin-top: 12px; height: 100px; padding: 4px; background: #000; border-radius: 4px; border: 1px solid var(--border-color); }
 .vu-channel { display: flex; flex-direction: column; align-items: center; width: 20px; }
 .vu-bg { flex: 1; width: 12px; background-color: #111; border: 1px solid #333; border-radius: 2px; position: relative; overflow: hidden; }
-.vu-fill { position: absolute; bottom: 0; width: 100%; height: 0%; /* Default anim via JS */ background: linear-gradient(to top, #00FF88 50%, #FFD700 80%, #FF0000 100%); transition: height 0.05s ease-out; }
+.vu-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: linear-gradient(to top, #00FF88 50%, #FFD700 80%, #FF0000 100%); transition: height 0.05s ease-out; }
 .vu-channel span { font-size: 9px; color: var(--text-muted); margin-top: 4px; font-weight: bold; }
 
-/* Signal Generator */
 .generator-controls { display: flex; gap: 8px; align-items: flex-end; }
 .noise-btn { flex: 1; padding: 8px; background-color: #1f6feb; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
 .noise-btn.playing { background-color: #da3633; }
@@ -111,9 +101,8 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
 .json-buttons button { flex: 1; background-color: var(--bg-base); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 .json-buttons button:hover { background-color: var(--border-color); }
 .autosave-notice { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: auto; }
-
-</style>
     
+    </style>
 </head>
 <body>
     <!-- Topbar -->
@@ -189,26 +178,29 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
         <!-- Right Panel: Settings -->
         <aside class="settings-panel">
             
-            <!-- NEW: Audio Engine & VU Meters -->
+            <!-- Audio Engine & Dual Inputs -->
             <div class="settings-group">
                 <h3>Audio Engine & I/O</h3>
                 <button id="btn-audio-access" class="access-btn">1. Request Audio Access</button>
                 
-                <label>Input Device (Mic/Ref)</label>
-                <select id="input-device" disabled><option>Aguardando permissão...</option></select>
+                <label>Input Device (Reference / Ch 1)</label>
+                <select id="input-ref" disabled><option>Aguardando permissão...</option></select>
+
+                <label>Input Device (Measurement / Ch 2)</label>
+                <select id="input-mic" disabled><option>Aguardando permissão...</option></select>
                 
                 <label>Output Device (Speaker)</label>
                 <select id="output-device" disabled><option>Aguardando permissão...</option></select>
 
-                <!-- VU Meters Container -->
+                <!-- VU Meters -->
                 <div class="vu-meters-container">
                     <div class="vu-channel">
                         <div class="vu-bg"><div class="vu-fill" id="vu-in-l"></div></div>
-                        <span>IN L</span>
+                        <span>REF L</span>
                     </div>
                     <div class="vu-channel">
                         <div class="vu-bg"><div class="vu-fill" id="vu-in-r"></div></div>
-                        <span>IN R</span>
+                        <span>MIC R</span>
                     </div>
                     <div class="vu-channel" style="margin-left: 10px;">
                         <div class="vu-bg"><div class="vu-fill" id="vu-out-l"></div></div>
@@ -221,7 +213,7 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
                 </div>
             </div>
 
-            <!-- NEW: Signal Generator -->
+            <!-- Signal Generator -->
             <div class="settings-group">
                 <h3>Signal Generator</h3>
                 <div class="generator-controls">
@@ -269,13 +261,9 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
         </aside>
     </div>
 
-    <script>
+    <script">
     
-// =========================================================================
-// WEBSMAART - MOTOR DE ÁUDIO REAL (WEB AUDIO API)
-// =========================================================================
-
-let appState = {
+    let appState = {
     theme: 'dark', smoothing: '6', averaging: '2s',
     scaleMin: 20, scaleMax: 20000, noiseGain: -18
 };
@@ -283,21 +271,15 @@ let appState = {
 let savedTraces = [];
 const traceColors = ['#00FF88', '#00B7FF', '#FF00FF', '#FFD700', '#00FFFF', '#FF8C00'];
 
-// --- VARIÁVEIS DE ÁUDIO ---
 let audioCtx;
 let inputStream, outputStream;
 let sourceNode;
-let splitter;
-let analyzerInL, analyzerInR; // Analisadores de VU In
-let analyzerOutL, analyzerOutR; // Analisadores de VU Out
+let analyzerRef, analyzerMic;
+let analyzerOutL, analyzerOutR;
 
-// Nodes do Gerador de Ruído
 let noiseNode;
 let noiseGainNode;
 let isNoisePlaying = false;
-
-// Loop de desenho dos VUs
-let animationFrameId;
 
 document.addEventListener('DOMContentLoaded', () => {
     initUI();
@@ -308,15 +290,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-audio-access').addEventListener('click', requestAudioAccess);
     document.getElementById('btn-noise').addEventListener('click', togglePinkNoise);
     
-    // Atualiza o ganho quando o input muda
     document.getElementById('noise-gain').addEventListener('input', (e) => {
         if(noiseGainNode) {
-            // Converte dB para ganho linear (0.0 a 1.0)
             const db = parseFloat(e.target.value);
-            const linearGain = Math.pow(10, db / 20);
-            noiseGainNode.gain.value = linearGain;
+            noiseGainNode.gain.value = Math.pow(10, db / 20);
         }
     });
+
+    // Inicia o loop de renderização dos gráficos e VUs
+    requestAnimationFrame(renderLoop);
 });
 
 function initUI() {
@@ -355,125 +337,112 @@ function initUI() {
 }
 
 // ==========================================
-// AUDIO ENGINE (WEB AUDIO API REAL)
+// AUDIO ENGINE & DUAL INPUT SELECT
 // ==========================================
 
 async function requestAudioAccess() {
     const btn = document.getElementById('btn-audio-access');
     
     try {
-        // Pede permissão para acessar o hardware real (Desliga filtros)
         inputStream = await navigator.mediaDevices.getUserMedia({ 
-            audio: { 
-                echoCancellation: false, 
-                autoGainControl: false, 
-                noiseSuppression: false 
-            } 
+            audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } 
         });
         
         btn.textContent = "Audio Access Granted";
         btn.classList.add('granted');
         
-        // Inicia o Contexto de Áudio (Coração da Etapa 3)
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         await populateDeviceLists();
         setupAudioRouting();
         
     } catch (err) {
-        alert("Erro ao acessar placa de áudio. Rode em localhost ou https:// e não use iframes.");
+        alert("Erro ao acessar placa de áudio: " + err.message);
         console.error(err);
     }
 }
 
 async function populateDeviceLists() {
-    const inputSelect = document.getElementById('input-device');
+    const refSelect = document.getElementById('input-ref');
+    const micSelect = document.getElementById('input-mic');
     const outputSelect = document.getElementById('output-device');
     
-    inputSelect.innerHTML = '';
+    refSelect.innerHTML = '';
+    micSelect.innerHTML = '';
     outputSelect.innerHTML = '';
-    inputSelect.disabled = false;
+    
+    refSelect.disabled = false;
+    micSelect.disabled = false;
     outputSelect.disabled = false;
 
     const devices = await navigator.mediaDevices.enumerateDevices();
     
     devices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        
         if (device.kind === 'audioinput') {
-            option.text = device.label || `Microphone ${inputSelect.length + 1}`;
-            inputSelect.appendChild(option);
+            const opt1 = document.createElement('option');
+            opt1.value = device.deviceId;
+            opt1.text = device.label || `Input ${refSelect.length + 1}`;
+            refSelect.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = device.deviceId;
+            opt2.text = device.label || `Input ${micSelect.length + 1}`;
+            micSelect.appendChild(opt2);
         } else if (device.kind === 'audiooutput') {
-            option.text = device.label || `Speaker ${outputSelect.length + 1}`;
-            outputSelect.appendChild(option);
+            const opt3 = document.createElement('option');
+            opt3.value = device.deviceId;
+            opt3.text = device.label || `Speaker ${outputSelect.length + 1}`;
+            outputSelect.appendChild(opt3);
         }
     });
 
-    if(inputSelect.options.length === 0) inputSelect.innerHTML = '<option>Nenhum input encontrado</option>';
-    if(outputSelect.options.length === 0) outputSelect.innerHTML = '<option>Nenhum output encontrado</option>';
+    // Seleciona o segundo input por padrão para o Mic, se houver mais de um
+    if(micSelect.options.length > 1) {
+        micSelect.selectedIndex = 1;
+    }
 }
 
 function setupAudioRouting() {
-    // 1. Pega o som que vem do microfone/placa
     sourceNode = audioCtx.createMediaStreamSource(inputStream);
     
-    // 2. Separa os canais L e R físicos
-    splitter = audioCtx.createChannelSplitter(2);
+    analyzerRef = audioCtx.createAnalyser();
+    analyzerMic = audioCtx.createAnalyser();
+    analyzerOutL = audioCtx.createAnalyser();
+    analyzerOutR = audioCtx.createAnalyser();
+    
+    analyzerRef.fftSize = 2048;
+    analyzerMic.fftSize = 2048;
+    analyzerOutL.fftSize = 2048;
+    analyzerOutR.fftSize = 2048;
+
+    // Splitter físico para alimentar as vias
+    const splitter = audioCtx.createChannelSplitter(2);
     sourceNode.connect(splitter);
     
-    // 3. Cria analisadores (para os VUs lerem os dados reais)
-    analyzerInL = audioCtx.createAnalyser(); // Ref L
-    analyzerInR = audioCtx.createAnalyser(); // Mic R
-    analyzerOutL = audioCtx.createAnalyser(); // Pink Noise Out L
-    analyzerOutR = audioCtx.createAnalyser(); // Pink Noise Out R
-    
-    // Configuração dos analisadores
-    const fftSize = 1024;
-    analyzerInL.fftSize = fftSize;
-    analyzerInR.fftSize = fftSize;
-    analyzerOutL.fftSize = fftSize;
-    analyzerOutR.fftSize = fftSize;
-
-    // 4. Conecta as vias divididas aos analisadores de Entrada
-    splitter.connect(analyzerInL, 0); // Canal L (Reference)
-    splitter.connect(analyzerInR, 1); // Canal R (Measurement)
-
-    // O gerador de ruído se conectará aos analisadores de Saída quando for ligado
-    
-    // Inicia o Loop Visual real
-    drawVUMetersReal();
+    splitter.connect(analyzerRef, 0);
+    splitter.connect(analyzerMic, 1);
 }
 
-// --- GERADOR DE PINK NOISE REAL ---
 function createPinkNoiseNode() {
     const bufferSize = 4096;
-    let b0, b1, b2, b3, b4, b5, b6;
-    b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
-    
-    // Cria um nó script que processa áudio em tempo real
-    const node = audioCtx.createScriptProcessor(bufferSize, 1, 2); // 1 entrada nula, 2 saídas
+    let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+    const node = audioCtx.createScriptProcessor(bufferSize, 1, 2);
     
     node.onaudioprocess = function(e) {
-        const outputL = e.outputBuffer.getChannelData(0);
-        const outputR = e.outputBuffer.getChannelData(1);
-        
+        const outL = e.outputBuffer.getChannelData(0);
+        const outR = e.outputBuffer.getChannelData(1);
         for (let i = 0; i < bufferSize; i++) {
             let white = Math.random() * 2 - 1;
-            // Filtro de aproximação de Ruído Rosa (Paul Kellet's method)
             b0 = 0.99886 * b0 + white * 0.0555179;
             b1 = 0.99332 * b1 + white * 0.0750759;
             b2 = 0.96900 * b2 + white * 0.1538520;
             b3 = 0.86650 * b3 + white * 0.3104856;
             b4 = 0.55000 * b4 + white * 0.5329522;
             b5 = -0.7616 * b5 - white * 0.0168980;
-            const pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-            const pinkScaled = pink * 0.11; // Escalado para não clipar
-            
+            let pink = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
             b6 = white * 0.115926;
-            
-            outputL[i] = pinkScaled;
-            outputR[i] = pinkScaled;
+            outL[i] = pink;
+            outR[i] = pink;
         }
     };
     return node;
@@ -481,24 +450,15 @@ function createPinkNoiseNode() {
 
 function togglePinkNoise() {
     const btn = document.getElementById('btn-noise');
-    
-    if(!audioCtx) {
-        alert("Por favor, peça acesso ao áudio (Request Audio Access) primeiro.");
-        return;
-    }
+    if(!audioCtx) { alert("Peça acesso ao áudio primeiro."); return; }
 
     isNoisePlaying = !isNoisePlaying;
-    
     if(isNoisePlaying) {
-        // PLAY
         noiseNode = createPinkNoiseNode();
         noiseGainNode = audioCtx.createGain();
-        
-        // Define o volume baseado no slider
         const db = parseFloat(document.getElementById('noise-gain').value);
         noiseGainNode.gain.value = Math.pow(10, db / 20);
 
-        // Roteamento: Pink Noise -> Gain -> (Analyser Out L & R) -> Hardware Out
         noiseNode.connect(noiseGainNode);
         noiseGainNode.connect(analyzerOutL);
         noiseGainNode.connect(analyzerOutR);
@@ -507,68 +467,147 @@ function togglePinkNoise() {
         btn.textContent = "⏹ Stop Noise";
         btn.classList.add('playing');
     } else {
-        // STOP
-        if(noiseNode) {
-            noiseNode.disconnect();
-            noiseGainNode.disconnect();
-        }
+        if(noiseNode) { noiseNode.disconnect(); noiseGainNode.disconnect(); }
         btn.textContent = "▶ Pink Noise";
         btn.classList.remove('playing');
     }
 }
 
-// --- MEDIÇÃO DE SINAL (VU METERS REAIS) ---
+// ==========================================
+// RENDER LOOP (VUS + GRÁFICOS CANVAS)
+// ==========================================
+
 function getRMSdB(analyzer) {
-    if(!analyzer) return -100;
-    const dataArray = new Float32Array(analyzer.fftSize);
-    analyzer.getFloatTimeDomainData(dataArray);
-    
-    let sumSquares = 0.0;
-    for (let i = 0; i < dataArray.length; i++) {
-        sumSquares += dataArray[i] * dataArray[i];
-    }
-    const rms = Math.sqrt(sumSquares / dataArray.length);
-    
-    // Converte para dBFS (Decibels Full Scale)
-    let db = 20 * Math.log10(rms);
-    if (db < -60) db = -60; // Piso de ruído visual
-    return db;
+    if(!analyzer) return -60;
+    const data = new Float32Array(analyzer.fftSize);
+    analyzer.getFloatTimeDomainData(data);
+    let sum = 0;
+    for(let i=0; i<data.length; i++) sum += data[i]*data[i];
+    let db = 20 * Math.log10(Math.sqrt(sum / data.length));
+    return Math.max(-60, db);
 }
 
-function drawVUMetersReal() {
-    const vuInL = document.getElementById('vu-in-l');
-    const vuInR = document.getElementById('vu-in-r');
-    const vuOutL = document.getElementById('vu-out-l');
-    const vuOutR = document.getElementById('vu-out-r');
+function renderLoop() {
+    requestAnimationFrame(renderLoop);
 
-    function draw() {
-        animationFrameId = requestAnimationFrame(draw);
-        
-        // Lê dB reais das 4 vias
-        const dbInL = getRMSdB(analyzerInL);
-        const dbInR = getRMSdB(analyzerInR);
-        const dbOutL = getRMSdB(analyzerOutL);
-        const dbOutR = getRMSdB(analyzerOutR);
+    // 1. Atualiza VU Meters
+    const dbRef = getRMSdB(analyzerRef);
+    const dbMic = getRMSdB(analyzerMic);
+    const dbOutL = getRMSdB(analyzerOutL);
+    const dbOutR = getRMSdB(analyzerOutR);
 
-        // Mapeia de -60dB (0%) até 0dB (100%)
-        const mapDBtoHeight = (db) => Math.max(0, ((db + 60) / 60) * 100);
+    const mapDB = (db) => Math.max(0, ((db + 60) / 60) * 100);
+    document.getElementById('vu-in-l').style.height = `${mapDB(dbRef)}%`;
+    document.getElementById('vu-in-r').style.height = `${mapDB(dbMic)}%`;
+    document.getElementById('vu-out-l').style.height = `${mapDB(dbOutL)}%`;
+    document.getElementById('vu-out-r').style.height = `${mapDB(dbOutR)}%`;
 
-        vuInL.style.height = `${mapDBtoHeight(dbInL)}%`;
-        vuInR.style.height = `${mapDBtoHeight(dbInR)}%`;
-        vuOutL.style.height = `${mapDBtoHeight(dbOutL)}%`;
-        vuOutR.style.height = `${mapDBtoHeight(dbOutR)}%`;
+    // 2. Atualiza SPL no painel de Spectrograph
+    let currentSPL = Math.round(75 + (dbMic + 60) * 0.5); // Simulação de dBSPL baseada no Mic
+    if(!audioCtx || !document.getElementById('btn-audio-access').classList.contains('granted')) currentSPL = 0;
+    document.getElementById('spl-current').textContent = currentSPL > 0 ? `${currentSPL} dB` : '-- dB';
+
+    // 3. Desenha os Gráficos nos Canvas
+    drawRTA();
+    drawTransferFunction();
+    drawSpectrograph();
+}
+
+function drawRTA() {
+    const canvas = document.getElementById('canvas-rta');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if(canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
     }
-    
-    draw();
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Desenha grid de fundo
+    ctx.strokeStyle = '#1f242c';
+    ctx.lineWidth = 1;
+    for(let x=0; x<canvas.width; x+=50) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for(let y=0; y<canvas.height; y+=40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+
+    if(!analyzerMic) return;
+    const freqData = new Uint8Array(analyzerMic.frequencyBinCount);
+    analyzerMic.getByteFrequencyData(freqData);
+
+    // Desenha barras do RTA (verde estilo Smaart)
+    const barWidth = canvas.width / 64;
+    let x = 0;
+    for(let i=0; i<64; i++) {
+        const barHeight = (freqData[i] / 255) * canvas.height;
+        ctx.fillStyle = '#00FF88';
+        ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+        x += barWidth;
+    }
+}
+
+function drawTransferFunction() {
+    // Magnitude, Fase e Impulse
+    ['canvas-mag', 'canvas-phase', 'canvas-impulse'].forEach((id, index) => {
+        const canvas = document.getElementById(id);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if(canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+            canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+        }
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Linha central de referência
+        ctx.strokeStyle = '#30363d';
+        ctx.beginPath(); ctx.moveTo(0, canvas.height / 2); ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
+
+        // Simulação da curva ativa em verde/azul
+        ctx.strokeStyle = index === 0 ? '#00FF88' : (index === 1 ? '#00B7FF' : '#FFD700');
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for(let x=0; x<canvas.width; x+=5) {
+            let y = (canvas.height / 2) + Math.sin(x * 0.02 + Date.now() * 0.003) * (canvas.height * 0.3);
+            if(index === 2) y = canvas.height - Math.abs(Math.sin(x*0.05) * canvas.height * 0.8); // Impulse spike
+            if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Desenha os Traces Salvos (Holds) se houverem
+        savedTraces.forEach(tr => {
+            if(!tr.visible) return;
+            ctx.strokeStyle = tr.color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let x=0; x<canvas.width; x+=10) {
+                let y = (canvas.height / 2) + Math.cos(x * 0.02 + tr.id) * (canvas.height * 0.25);
+                if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        });
+    });
+}
+
+function drawSpectrograph() {
+    const canvas = document.getElementById('canvas-spectro');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if(canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = canvas.clientWidth; canvas.height.clientHeight;
+    }
+    // Efeito cascata simples (desloca a imagem para a esquerda)
+    ctx.drawImage(canvas, -2, 0);
 }
 
 // ==========================================
-// UTILIDADES
+// UTILIDADES E TRACE MANAGER
 // ==========================================
 
 function startClock() {
-    const clockEl = document.getElementById('clock-display');
-    setInterval(() => { clockEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false }); }, 1000);
+    setInterval(() => { document.getElementById('clock-display').textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false }); }, 1000);
 }
 
 function toggleTheme() {
@@ -601,13 +640,11 @@ function loadState() {
 
 function exportJSON() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
-    const dl = document.createElement('a');
-    dl.href = dataStr; dl.download = "websmaart_config.json"; dl.click();
+    const dl = document.createElement('a'); dl.href = dataStr; dl.download = "websmaart_config.json"; dl.click();
 }
 
 function importJSON() {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = '.json';
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
     input.onchange = e => {
         const reader = new FileReader();
         reader.readAsText(e.target.files[0], 'UTF-8');

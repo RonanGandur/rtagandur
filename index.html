@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSmaart - Analisador Acústico</title>
-    <style>
-    
-    :root.dark {
+    <link rel="stylesheet" href="style.css">
+<style>
+:root.dark {
     --bg-base: #0D1117; --bg-panel: #161b22; --border-color: #30363d;
     --text-main: #c9d1d9; --text-muted: #8b949e;
     --accent-blue: #00B7FF; --accent-green: #00FF88; --canvas-bg: #000000;
@@ -101,8 +101,8 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
 .json-buttons button { flex: 1; background-color: var(--bg-base); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 .json-buttons button:hover { background-color: var(--border-color); }
 .autosave-notice { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: auto; }
-    
-    </style>
+</style>
+
 </head>
 <body>
     <!-- Topbar -->
@@ -261,9 +261,9 @@ canvas { flex: 1; width: 100%; height: 100%; display: block; }
         </aside>
     </div>
 
-    <script>
-    
-    let appState = {
+<script>
+
+let appState = {
     theme: 'dark', smoothing: '6', averaging: '2s',
     scaleMin: 20, scaleMax: 20000, noiseGain: -18
 };
@@ -685,8 +685,8 @@ function renderTraces() {
         item.append(colorBox, nameInput, btnDel);
         list.appendChild(item);
     });
-}
+} 
     
-    </script>
+</script>
 </body>
 </html>
